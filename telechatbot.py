@@ -5,10 +5,6 @@ import datetime, pytz
 import json
 
 
-token = config[]
-bot = telegram.Bot(token=token)
-
-
 
 def get_config():
 
@@ -75,6 +71,7 @@ def main():
 
     updater.start_polling()
     updater.idle()
+
 
 if __name__ == '__main__':
 
