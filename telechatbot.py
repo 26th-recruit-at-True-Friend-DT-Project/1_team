@@ -2,9 +2,25 @@ import telegram
 from telegram.ext import Updater,CommandHandler, JobQueue
 from telegram.ext import MessageHandler, Filters
 import datetime, pytz
+import json
 
-token = "5835231749:AAHQSl1G_qFvdb_grs7Kfzv04XhMZAVgybE"
+
+token = config[]
 bot = telegram.Bot(token=token)
+
+
+
+def get_config():
+
+	f = open("config.json")
+
+	config_json = json.load(f)
+
+	api_key = config_json['api_key']
+
+	#req_url = service_url + "?crtfc_key=" + api_key
+
+	return api_key
 
 
 # Search specific msgs on user request
@@ -61,4 +77,7 @@ def main():
     updater.idle()
 
 if __name__ == '__main__':
+
+    token = get_config
+    bot = telegram.Bot(token=token)
     main()
