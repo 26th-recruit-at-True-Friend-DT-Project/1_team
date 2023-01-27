@@ -75,6 +75,6 @@ def main():
 
 if __name__ == '__main__':
 
-    token = get_config
+    token = get_config()
     bot = telegram.Bot(token=token)
     main()
