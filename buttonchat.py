@@ -7,15 +7,15 @@ from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
 from firebase_admin import db
 from firebase_admin import credentials
 import firebase_admin
+import json
 
 cred = credentials.Certificate('serviceAccountKey.json')
 default_app = firebase_admin.initialize_app(cred, {'databaseURL' : 'https://team1-2cd93-default-rtdb.firebaseio.com/'})
 ref = db.reference('/')
 print(ref.get()[0]['lowest'])
 
-token = get_config()
 
-bot = telepot.Bot(token)
+
 result = []
 
 price_dic = {
@@ -24,8 +24,8 @@ price_dic = {
 }
 
 
-first_answer = ""
-second_answer = ""
+#first_answer = ""
+#second_answer = ""
 go_to_second_flag = False
 
 #버튼 만드는 함수(필터링)
@@ -86,8 +86,11 @@ def on_callback_query(msg):
      bot.answerCallbackQuery(query_id, text='Got it')
 '''
 
+
+
 # callback 담겨있는 값
 def on_callback_query(msg):
+
     query_id, from_id, query_data = telepot.glance(msg, flavor='callback_query')
     print(query_id)
     print('Callback Query:', query_id, from_id, query_data)
@@ -95,27 +98,37 @@ def on_callback_query(msg):
     if query_data == "가격1":
         bot.sendMessage(from_id, text = "물건1")
         bot.sendMessage(from_id, '용도를 선택해주세요', reply_markup=keyboard2)
-        first_answer = "1억미만"
+        #first_answer = "가격1"
+        change_first_answer("가격1")
     elif query_data == "가격2":
         bot.sendMessage(from_id, text = "물건2")
         bot.sendMessage(from_id, '용도를 선택해주세요', reply_markup=keyboard2)
-        first_answer = "1억-5억"
+        first_answer = "가격2"
     elif query_data == "가격3":
         bot.sendMessage(from_id, text = "물건3")
         bot.sendMessage(from_id, '용도를 선택해주세요', reply_markup=keyboard2)
-        first_answer = "5억-10억"
+        first_answer = "가격3"
     elif query_data == "가격4":
         bot.sendMessage(from_id, text="물건4")
         bot.sendMessage(from_id, '용도를 선택해주세요', reply_markup=keyboard2)
-        first_answer = "10억 이상"
-    print(first_answer)
+        first_answer = "가격4"
+    elif query_data == "용도1":
+        second_answer = "용도1"
+        #print(second_answer)
+        change_second_answer("용도")
+        val1, val2 = print_answer()
+        print("done! ",val1)
+        print("done! ",val2)
+        #print("done! ",first_answer)
+        #print(second_answer)
+    #print(first_answer)
+
 
 def on_callback_query2(msg):
      query_id, from_id, query_data = telepot.glance(msg, flavor='callback_query')
      print(query_id)
      print('Callback Query:', query_id, from_id, query_data)
      query_data = msg['data']
-     first_filter(msg)
      if query_data == "용도1":
           bot.sendMessage(from_id, text = "물건12")
      elif query_data == "용도2":
@@ -125,9 +138,32 @@ def on_callback_query2(msg):
      elif query_data == "용도4":
           bot.sendMessage(from_id, text="물건45")
 
+def change_first_answer(first_answer):
+    global first_result
+    first_result = first_answer
+    print(first_result)
+
+def change_second_answer(second_answer):
+    global second_result
+    second_result = second_answer
+    print(first_result)
+
+def print_answer():
+    print("1:", first_result)
+    print("2: ",second_result)
+
+    return first_result, second_result
+
+first_result = ""
+second_result = ""
+
+
+token = get_config()
+bot = telepot.Bot(token)
+
 MessageLoop(bot, {'chat': first_filter,
                   'callback_query': on_callback_query}).run_forever()
 print('Listening ...')
 
-while 1:
-    time.sleep(10)
+#while 1:
+#    time.sleep(10)
