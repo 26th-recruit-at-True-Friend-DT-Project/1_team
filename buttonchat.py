@@ -113,7 +113,7 @@ def print_answer(id: str) -> None:
             if(i[1] == item['location']):
                 flag = False
                 break
-        if flag == True:
+        if flag:
             tmp.append((idx, item['location']))
         flag = True
 
@@ -129,14 +129,13 @@ def print_answer(id: str) -> None:
 def find_object() -> list:
     result = []
     for item in ref.get():
-        if(item['category'] == category and (int(item['lowest']) >= price_range[0] and int(item['lowest']) < price_range[1])):
+        if(item['category1'] == category and (int(item['lowest']) >= price_range[0] and int(item['lowest']) < price_range[1])):
             result.append(item)
     return result
 
 
 # callback 담겨있는 값
 def on_callback_query(msg):
-
     query_id, from_id, query_data = telepot.glance(msg, flavor='callback_query')
     print(query_id)
     print('Callback Query:', query_id, from_id, query_data)
