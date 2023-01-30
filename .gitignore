@@ -127,3 +127,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Firebase, chatbot token
+setting.json
+serviceAccountKey.json
