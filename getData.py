@@ -65,7 +65,7 @@ for i, item in enumerate(items):
   start_date = f'{start_date[:4]}-{start_date[4:6]}-{start_date[6:8]}'
   end_date = item.find('pbct_cls_dtm').get_text()[:8]
   end_date = f'{end_date[:4]}-{end_date[4:6]}-{end_date[6:8]}'
-  duration = f'{start_date}~{end_date}'
+  duration = f'{start_date} ~ {end_date}'
   page_url = f'https://www.onbid.co.kr/op/cta/cltrdtl/collateralRealEstateDetail.do?searchAddr=&searchSiDo=&searchSiGunGu=&searchEmd=&collateralGbnCd=0001&bizDvsnCd=0001&cltrHstrNo={item_record_num}&cltrNo={item_num}&plnmNo={announce_num}&pbctNo={sale_num}&scrnGrpCd={grp_code}&pbctCdtnNo={sale_cdtn_num}&viewGbn=&menuId=2021&searchYn=Y&searchDpslMtdCd=&searchCltrNm=&searchCltrMnmtNo=&searchBegnDtm=2023-01-26&searchClsDtm={end_date}&searchFromMinBidPrc=&searchToMinBidPrc=&searchOrgNm=&searchFromApslAsesAmt=&searchToApslAsesAmt=&searchCltrAdrsType=road&siDo=&siGunGu=&emd=&searchAddrDtl=&searchFromLandSqms=&searchToLandSqms=&searchFromBldSqms=&searchToBldSqms=&searchFromUsbdCnt=&searchToUsbdCnt=&searchShrYn=&_searchArrayPrptDvsnCd=on&_searchArrayPrptDvsnCd=on&_searchArrayPrptDvsnCd=on&_searchArrayPrptDvsnCd=on&_searchArrayPrptDvsnCd=on&_searchArrayPrptDvsnCd=on&_searchArrayPrptDvsnCd=on&_searchArrayPrptDvsnCd=on&_searchArrayPrptDvsnCd=on&searchAdtnInfo1=&searchAdtnInfo2=&searchAdtnInfo3=&searchMbsNm=&searchScrtNm=&searchItemNm=&searchScrtKind=&searchDpslFincComp=&searchPoorBondKind=&searchHdorAstFixDyFrom=&searchHdorAstFixDyTo=&_searchKamcoYn=on&searchOrderBy=&pageUnit=10&pageIndex=1&srchNm=&_csrf=1e958df3-63e4-4a06-a53e-fa7bf37f19f1&_csrf=1e958df3-63e4-4a06-a53e-fa7bf37f19f1'
   
 
