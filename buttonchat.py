@@ -7,12 +7,19 @@ from firebase_admin import credentials
 import firebase_admin
 import json
 
-cred = credentials.Certificate('serviceAccountKey.json')
-default_app = firebase_admin.initialize_app(cred, {'databaseURL' : 'https://team1-2cd93-default-rtdb.firebaseio.com/'})
-ref = db.reference('/')
-print(ref.get()[0]['lowest'])
+# token, url 숨겨서 가져오기
+def get_config() -> str:
+    f = open('setting.json')
+    config_json = json.load(f)
+    url = config_json['firebase_url']
+    token = config_json['bot_token']
+    return url, token
 
-go_to_second_flag = False
+firebase_url, bot_token = get_config()
+
+cred = credentials.Certificate('serviceAccountKey.json')
+default_app = firebase_admin.initialize_app(cred, {'databaseURL' : firebase_url})
+ref = db.reference('/')
 
 first_result = ""
 second_result = ""
@@ -52,7 +59,6 @@ keyboard2 = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='�
                                                      [InlineKeyboardButton(text='상가용및업무용건물', callback_data='용도3')],
                                                      [InlineKeyboardButton(text='산업용및기타특수용건물', callback_data='용도4')],
                                                      [InlineKeyboardButton(text='용도복합용건물', callback_data='용도5')]])
-
 '''
 def get_config():
 
@@ -77,13 +83,14 @@ def selectType(category: str, id: str) -> None:
     change_second_answer(category)
     print_answer(id)
 
+# 첫번째 문항
 def change_first_answer(first_answer):
     global first_result
     first_result = first_answer
     global price_range
     price_range = (price_dict[first_result], price_dict[first_result[:2]+ str(int(first_result[-1])+1)])
 
-
+# 두번째 문항
 def change_second_answer(second_answer):
     global second_result
     second_result = second_answer
@@ -114,8 +121,7 @@ def print_answer(id: str) -> None:
         result_list.append(output_list[i[0]])
 
     print(f'size: {len(result_list)}')
-    for i in result_list:
-        print(i)
+    
     bot.sendMessage(id, f'총 {len(result_list)}건이 도출되었습니다.')
     for i in result_list:
         bot.sendMessage(id, f"지번: {i['location']}\n")
@@ -135,17 +141,17 @@ def on_callback_query(msg):
     print(query_id)
     print('Callback Query:', query_id, from_id, query_data)
     query_data = msg['data']
-    if query_data == '가격1' or query_data == '가격2' or query_data == '가격3' or query_data == '가격4':
+    if query_data[:2] == '가격':
         selectPrice(query_data, from_id)
 
-    elif query_data == '용도1' or query_data == '용도2' or query_data == '용도3' or query_data == '용도4' or query_data == '용도5':
+    elif query_data[:2] == '용도':
         selectType(query_data, from_id)
 
     return first_result, second_result
 
 
 
-token = '5730533314:AAEqs39wz-vc987ZhXMS4gIq3eg4Ggtr5gw'
+token = bot_token
 bot = telepot.Bot(token)
 
 MessageLoop(bot, {'chat': first_filter,
