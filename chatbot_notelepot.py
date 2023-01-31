@@ -65,7 +65,7 @@ firebase_url, bot_token = get_config()
 
 cred = credentials.Certificate('serviceAccountKey.json')
 default_app = firebase_admin.initialize_app(cred, {'databaseURL' : firebase_url})
-ref = db.reference('/')
+ref = db.reference('/items')
 
 num_request=0
 
