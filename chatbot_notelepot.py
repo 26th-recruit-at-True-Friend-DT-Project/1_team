@@ -40,7 +40,10 @@ from os import path
 lock = threading.Lock()
 
 
-#user 정보 저장 db
+
+
+#To-Do : user 정보 저장 db, users.json을 불러오는 부분을 firebase에서 불러오면 됨.
+#jsonArray형태로 반환됨.
 filename = "./users.json"
 
 #유저, filter 선택 정보 반환
@@ -52,6 +55,8 @@ def get_user():
 
 
     return user_list
+
+#########user정보 반환함수 끝 #####
 
 
 # token, url 숨겨서 가져오기
@@ -68,7 +73,7 @@ firebase_url, bot_token = get_config()
 
 cred = credentials.Certificate('serviceAccountKey.json')
 default_app = firebase_admin.initialize_app(cred, {'databaseURL' : firebase_url})
-ref = db.reference('/')
+ref = db.reference('/items')
 
 
 #가격에 대한 응답
@@ -116,7 +121,7 @@ def selectPrice(price: str, id: str) -> None:
 # 용도 선택
 def selectType(category: str, id: str) -> None:
     change_second_answer(category)
-    print_answer(id)
+    #print_answer(id)
 
 # 첫번째 문항
 def change_first_answer(first_answer):
@@ -160,20 +165,22 @@ def print_answer(id: str) -> None:
 
     bot.send_message(id, f'총 {len(result_list)}건이 도출되었습니다.')
 
-
+    for data in result_list:
+        btn = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='상세페이지로 이동', url=data['link'])]])
+        bot.sendMessage(id, f"용도명: {data['category1']} / {data['category2']}\n\n지번: {data['location']}\n\n입찰일시: {data['duration']}\n\n감정가: {format(int(data['gamjung']), ',')}\n\n최저입찰가(비율): {format(int(data['lowest']), ',')}({data['rate']})\n\n유찰횟수: {data['fail_cnt']}", reply_markup=btn)
     #결과 값을 dataframe으로 변환
-    ax = plt.subplot(111, frame_on=False) # no visible frame
-    ax.xaxis.set_visible(False)  # hide the x axis
-    ax.yaxis.set_visible(False)  # hide the y axis
+    #ax = plt.subplot(111, frame_on=False) # no visible frame
+    #ax.xaxis.set_visible(False)  # hide the x axis
+    #ax.yaxis.set_visible(False)  # hide the y axis
 
 
     #dataframe 변환
-    df = pd.DataFrame(result_list)
+    #df = pd.DataFrame(result_list)
 
     #user-specific한 결과값을 저장하기 위해 img 변환후 id값을 filename으로 부여
-    dfi.export(df,"mytable"+str(id)+".png")
+    #dfi.export(df,"mytable"+str(id)+".png")
     #이미지 채팅창으로 전송
-    bot.send_photo(chat_id=id, caption="link", photo=open('mytable'+str(id)+'.png', 'rb'))
+    #bot.send_photo(chat_id=id, caption="link", photo=open('mytable'+str(id)+'.png', 'rb'))
 
 
 def find_object(id) -> list:
@@ -181,7 +188,8 @@ def find_object(id) -> list:
     result = []
 
 
-    #user list(유저id, filter)정보
+
+    #user list(유저id, filter)정보 반환.
     user_list = get_user()
 
     #user_list의 user_id값만 따로 빼서 list로 만들기
@@ -227,8 +235,9 @@ def callback_query_handler(update, context):
         selectPrice(query_data, from_id)
 
     elif query_data == '용도1' or query_data == '용도2' or query_data == '용도3' or query_data == '용도4' or query_data == '용도5':
-        selectType(query_data, from_id)
 
+        selectType(query_data, from_id)
+        bot.send_message(chat_id=from_id, text="물건 탐색중...")
         #race condition 방지
         lock.acquire()
 
@@ -272,8 +281,12 @@ def callback_query_handler(update, context):
                                     indent=4,
                                     separators=(',',': '))
 
+                #selectType(query_data, from_id)
+        print_answer(from_id)
 
         lock.release()
+
+        #selectType(query_data, from_id)
 
 
 # 알람 세팅 부분
@@ -286,7 +299,7 @@ def search_msgs(update, context) -> None:
 
 
     #알람 시간 세팅 hour = 시 min = 분
-    t = datetime.time(hour=13, minute=49, tzinfo=pytz.timezone('Asia/Seoul'))
+    t = datetime.time(hour=16, minute=23, tzinfo=pytz.timezone('Asia/Seoul'))
 
     #days = 월요일 0 기준
     context.job_queue.run_daily(callback_search_msgs,t,days=(0,1,2,3,4,5,6), context=update.message.chat_id, name=str(update.effective_chat.id))
