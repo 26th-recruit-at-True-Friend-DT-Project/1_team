@@ -83,14 +83,14 @@ def selectType(category: str, id: str) -> None:
     change_second_answer(category)
     print_answer(id)
 
-# 첫번째 문항
+# 첫번째 문항 저장
 def change_first_answer(first_answer):
     global first_result
     first_result = first_answer
     global price_range
-    price_range = (price_dict[first_result], price_dict[first_result[:2]+ str(int(first_result[-1])+1)])
+    price_range = (price_dict[first_result], price_dict[first_result[:2] + str(int(first_result[-1])+1)])
 
-# 두번째 문항
+# 두번째 문항 저장
 def change_second_answer(second_answer):
     global second_result
     second_result = second_answer
@@ -113,7 +113,7 @@ def print_answer(id: str) -> None:
             if(i[1] == item['location']):
                 flag = False
                 break
-        if flag == True:
+        if flag:
             tmp.append((idx, item['location']))
         flag = True
 
@@ -123,20 +123,20 @@ def print_answer(id: str) -> None:
     print(f'size: {len(result_list)}')
     
     bot.sendMessage(id, f'총 {len(result_list)}건이 도출되었습니다.')
-    for i in result_list:
-        bot.sendMessage(id, f"지번: {i['location']}\n")
+    for data in result_list:
+        btn = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='상세페이지로 이동', url=data['link'])]])
+        bot.sendMessage(id, f"용도명: {data['category1']} / {data['category2']}\n\n지번: {data['location']}\n\n입찰일시: {data['duration']}\n\n감정가: {format(int(data['gamjung']), ',')}\n\n최저입찰가(비율): {format(int(data['lowest']), ',')}({data['rate']})\n\n유찰횟수: {data['fail_cnt']}", reply_markup=btn)
 
 def find_object() -> list:
     result = []
     for item in ref.get():
-        if(item['category'] == category and (int(item['lowest']) >= price_range[0] and int(item['lowest']) < price_range[1])):
+        if(item['category1'] == category and (int(item['lowest']) >= price_range[0] and int(item['lowest']) < price_range[1])):
             result.append(item)
     return result
 
 
 # callback 담겨있는 값
 def on_callback_query(msg):
-
     query_id, from_id, query_data = telepot.glance(msg, flavor='callback_query')
     print(query_id)
     print('Callback Query:', query_id, from_id, query_data)
