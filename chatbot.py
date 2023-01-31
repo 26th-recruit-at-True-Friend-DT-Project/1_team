@@ -36,9 +36,15 @@ cred = credentials.Certificate('serviceAccountKey.json')
 default_app = firebase_admin.initialize_app(cred, {'databaseURL' : firebase_url})
 ref = db.reference('/')
 
+
+#가격에 대한 응답
 first_result = ""
+#용도에 대한 응답
 second_result = ""
+
+#용도에 대한 응답
 category = ""
+#가격에 대한 응답
 price_range = ()
 
 price_dict = {
@@ -63,7 +69,7 @@ token = bot_token
 bot = telepot.Bot(token)
 
 
-# 버튼1
+# 가격 선택창
 def first_filter(msg):
     content_type, chat_type, chat_id = telepot.glance(msg)
 
@@ -74,7 +80,7 @@ def first_filter(msg):
 
     bot.sendMessage(chat_id, '최저 가격을 클릭해주세요', reply_markup=keyboard)
 
-#버튼2
+# 용도 선택 창
 keyboard2 = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='토지', callback_data='용도1')],
                                                      [InlineKeyboardButton(text='주거용건물', callback_data='용도2')],
                                                      [InlineKeyboardButton(text='상가용및업무용건물', callback_data='용도3')],
@@ -146,6 +152,7 @@ def print_answer(id: str) -> None:
     bot.sendMessage(id, f'총 {len(result_list)}건이 도출되었습니다.')
 
 
+    #결과값을 dataframe으로 변경
     ax = plt.subplot(111, frame_on=False) # no visible frame
     ax.xaxis.set_visible(False)  # hide the x axis
     ax.yaxis.set_visible(False)  # hide the y axis
@@ -158,10 +165,10 @@ def print_answer(id: str) -> None:
 
     df = pd.DataFrame(result_list)
     #df_styled = df.style.background_gradient()
-    dfi.export(df,"mytable.png")
+    dfi.export(df,"mytable"+str(id)+".png")
 
     #link_list = ["link1", "link2"]
-    bot.sendPhoto(chat_id=id,caption="link1\nlink2", filename="http://www.naver.com", photo=open('mytable.png', 'rb'))
+    bot.sendPhoto(chat_id=id,caption="link1\nlink2", filename="http://www.naver.com", photo=open('mytable'+str(id)+'.png', 'rb'))
 
 
 def find_object() -> list:

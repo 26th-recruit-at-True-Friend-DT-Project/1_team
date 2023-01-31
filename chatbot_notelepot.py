@@ -100,33 +100,6 @@ keyboard2 = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='�
 
 
 
-# 버튼1
-'''
-def first_filter(msg):
-    content_type, chat_type, chat_id = telepot.glance(msg)
-
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='1억 미만', callback_data='가격1'),
-                                                      InlineKeyboardButton(text='1억 이상 5억 미만', callback_data='가격2')],
-                                                     [InlineKeyboardButton(text='5억 이상 10억 미만', callback_data='가격3'),
-                                                      InlineKeyboardButton(text='10억 이상', callback_data='가격4')]])
-
-    bot.send_message(chat_id, '최저 가격을 클릭해주세요', reply_markup=keyboard)
-'''
-
-'''
-def get_config():
-
-	f = open("config.json")
-
-	config_json = json.load(f)
-
-	api_key = config_json['api_key']
-
-	#req_url = service_url + "?crtfc_key=" + api_key
-
-	return api_key
-'''
-
 
 
 # 가격 범위 선택
@@ -179,6 +152,8 @@ def print_answer(id: str) -> None:
 
     print(f'size: {len(result_list)}')
 
+
+    print("your id:?",id)
     bot.send_message(id, f'총 {len(result_list)}건이 도출되었습니다.')
 
 
@@ -195,7 +170,7 @@ def print_answer(id: str) -> None:
     df = pd.DataFrame(result_list)
     #df_styled = df.style.background_gradient()
     dfi.export(df,"mytable"+str(id)+".png")
-    bot.send_photo(chat_id=id, caption="link", photo=open('mytable'+str(id)+'.png', 'rb'))
+    bot.send_photo(chat_id=id, caption="link", photo=open("mytable"+str(id)+".png", 'rb'))
 
 
 def find_object(id) -> list:
@@ -223,45 +198,11 @@ def find_object(id) -> list:
     else:
         bot.send_message(chat_id=id, text="필터를 등록하세요")
 
-    '''
-    if any(d['user_id'] == id for d in user_list):
-        category1 = user_list[select_count]["filter"][0]
-        print("test1",category1)
-        price_range = user_list[select_count]["filter"][1]
-        print("test2",price_range)
-        select_count += 1
-
-        for item in ref.get():
-            if(item['category1'] == category1 and (int(item['lowest']) >= price_range[0] and int(item['lowest']) < price_range[1])):
-                result.append(item)
-
-    else:
-        bot.send_message(chat_id=id, text="필터를 등록하세요")
-    '''
 
 
     return result
 
 
-# callback 담겨있는 값
-
-def on_callback_query(msg):
-
-    query_id, from_id, query_data = telepot.glance(msg, flavor='callback_query')
-    print(query_id)
-    print('Callback Query:', query_id, from_id, query_data)
-    query_data = msg['data']
-    if query_data[:2] == '가격':
-        selectPrice(query_data, from_id)
-
-    elif query_data[:2] == '용도':
-        selectType(qsuery_data, from_id)
-
-    print(msg)
-    #elif str(query_data) == "알림설정" or query_data =="알림해제":
-    #    alert(bot)
-
-    return first_result, second_result
 
 
 # callback 담겨있는 값
@@ -270,12 +211,14 @@ def callback_query_handler(update, context):
     from_id = update.effective_chat.id
 
     print(type(query_data))
+    print("query:",query_data)
 
     if query_data == '가격1' or query_data == '가격2' or query_data == '가격3' or query_data == '가격4':
         selectPrice(query_data, from_id)
 
     elif query_data == '용도1' or query_data == '용도2' or query_data == '용도3' or query_data == '용도4' or query_data == '용도5':
         selectType(query_data, from_id)
+
         lock.acquire()
 
         user_id = update.effective_chat.id
@@ -286,17 +229,7 @@ def callback_query_handler(update, context):
         print("length?:", len(user_list))
         user_dict = {"user_id" : user_id, "filter" : [category1, price_range]}
 
-        '''
-        if not any(d['user_id'] == user_id for d in user_list):
-            user_list.append(user_dict)
-            with open(filename, 'w',  encoding='utf-8') as json_file:
-                json.dump(user_list, json_file,
-                                    ensure_ascii=False,
-                                    indent=4,
-                                    separators=(',',': '))
-        '''
 
-        #select_count = 0
 
         user_names = [x['user_id'] for x in user_list]
 
@@ -304,6 +237,7 @@ def callback_query_handler(update, context):
         if user_id in user_names:
             #print("count : ", select_count)
             select_count = user_names.index(user_id)
+            print("selectcount:",select_count)
             user_list[select_count]["filter"] = user_dict["filter"]
             #select_count += 1
             with open(filename, 'w',  encoding='utf-8') as json_file:
@@ -318,36 +252,6 @@ def callback_query_handler(update, context):
                                     ensure_ascii=False,
                                     indent=4,
                                     separators=(',',': '))
-        '''
-        if any(d['user_id'] == user_id for d in user_list):
-            print("count : ", select_count)
-            user_list[select_count]["filter"] = user_dict["filter"]
-            select_count += 1
-            with open(filename, 'w',  encoding='utf-8') as json_file:
-                json.dump(user_list, json_file,
-                                    ensure_ascii=False,
-                                    indent=4,
-                                    separators=(',',': '))
-
-        else:
-            user_list.append(user_dict)
-            with open(filename, 'w',  encoding='utf-8') as json_file:
-                json.dump(user_list, json_file,
-                                    ensure_ascii=False,
-                                    indent=4,
-                                    separators=(',',': '))
-
-
-
-        if any(d['user_id'] == user_id for d in user_list):
-            d["filter"] = user_dict["filter"]
-            with open(filename, 'wㅌ',  encoding='utf-8') as json_file:
-                json.dump(user_list, json_file,
-                                    ensure_ascii=False,
-                                    indent=4,
-                                    separators=(',',': '))
-        '''
-
 
         lock.release()
 
