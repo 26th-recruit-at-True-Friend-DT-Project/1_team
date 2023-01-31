@@ -23,6 +23,36 @@ import numpy as np
 import dataframe_image as dfi
 from pandas.plotting import table
 
+
+#lock implementation for user management. 동시에 여러 유저들이 global 변수에 접근하는 것을 대비
+#고유 User id를 포함한 dictionary를 atomic하게 생성.
+
+import threading
+
+#system
+from os import path
+
+
+
+
+
+
+lock = threading.Lock()
+
+filename = "./users.json"
+
+def get_user():
+    user_list = []
+    #filename = "./users.json"
+    #user_list = json.load(filename)
+    with open(filename, 'r') as user_file:
+        user_list = json.load(user_file)
+      #print("userfile:",user_file.read())
+      #user_list = user_file.read()
+
+    return user_list
+  #user_list = [user_file.read()]
+  #print(file_contents)
 # token, url 숨겨서 가져오기
 def get_config() -> str:
     f = open('setting.json')
@@ -71,6 +101,7 @@ keyboard2 = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='�
 
 
 # 버튼1
+'''
 def first_filter(msg):
     content_type, chat_type, chat_id = telepot.glance(msg)
 
@@ -80,13 +111,8 @@ def first_filter(msg):
                                                       InlineKeyboardButton(text='10억 이상', callback_data='가격4')]])
 
     bot.send_message(chat_id, '최저 가격을 클릭해주세요', reply_markup=keyboard)
+'''
 
-#버튼2
-keyboard2 = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='토지', callback_data='용도1')],
-                                                     [InlineKeyboardButton(text='주거용건물', callback_data='용도2')],
-                                                     [InlineKeyboardButton(text='상가용및업무용건물', callback_data='용도3')],
-                                                     [InlineKeyboardButton(text='산업용및기타특수용건물', callback_data='용도4')],
-                                                     [InlineKeyboardButton(text='용도복합용건물', callback_data='용도5')]])
 '''
 def get_config():
 
@@ -100,6 +126,8 @@ def get_config():
 
 	return api_key
 '''
+
+
 
 # 가격 범위 선택
 def selectPrice(price: str, id: str) -> None:
@@ -132,7 +160,7 @@ def print_answer(id: str) -> None:
     print("1: ", first_result)
     print("2: ", second_result)
     print(f'category1: {category1}, price_range: {price_range}')
-    output_list = find_object()
+    output_list = find_object(id)
     result_list = []
     # 위치 중복 제거
     tmp = []
@@ -166,19 +194,57 @@ def print_answer(id: str) -> None:
 
     df = pd.DataFrame(result_list)
     #df_styled = df.style.background_gradient()
-    dfi.export(df,"mytable.png")
-    bot.send_photo(chat_id=id, caption="link", photo=open('mytable.png', 'rb'))
+    dfi.export(df,"mytable"+str(id)+".png")
+    bot.send_photo(chat_id=id, caption="link", photo=open('mytable'+str(id)+'.png', 'rb'))
 
 
-def find_object() -> list:
+def find_object(id) -> list:
     result = []
-    for item in ref.get():
-        if(item['category1'] == category1 and (int(item['lowest']) >= price_range[0] and int(item['lowest']) < price_range[1])):
-            result.append(item)
+
+    select_count = 0
+
+    user_list = get_user()
+
+
+    user_names = [x['user_id'] for x in user_list]
+
+
+    if id in user_names:
+        select_count = user_names.index(id)
+        category1 = user_list[select_count]["filter"][0]
+        print("test1",category1)
+        price_range = user_list[select_count]["filter"][1]
+        print("test2",price_range)
+        #select_count += 1
+
+        for item in ref.get():
+            if(item['category1'] == category1 and (int(item['lowest']) >= price_range[0] and int(item['lowest']) < price_range[1])):
+                result.append(item)
+    else:
+        bot.send_message(chat_id=id, text="필터를 등록하세요")
+
+    '''
+    if any(d['user_id'] == id for d in user_list):
+        category1 = user_list[select_count]["filter"][0]
+        print("test1",category1)
+        price_range = user_list[select_count]["filter"][1]
+        print("test2",price_range)
+        select_count += 1
+
+        for item in ref.get():
+            if(item['category1'] == category1 and (int(item['lowest']) >= price_range[0] and int(item['lowest']) < price_range[1])):
+                result.append(item)
+
+    else:
+        bot.send_message(chat_id=id, text="필터를 등록하세요")
+    '''
+
+
     return result
 
 
 # callback 담겨있는 값
+
 def on_callback_query(msg):
 
     query_id, from_id, query_data = telepot.glance(msg, flavor='callback_query')
@@ -197,6 +263,7 @@ def on_callback_query(msg):
 
     return first_result, second_result
 
+
 # callback 담겨있는 값
 def callback_query_handler(update, context):
     query_data = update.callback_query.data
@@ -209,6 +276,80 @@ def callback_query_handler(update, context):
 
     elif query_data == '용도1' or query_data == '용도2' or query_data == '용도3' or query_data == '용도4' or query_data == '용도5':
         selectType(query_data, from_id)
+        lock.acquire()
+
+        user_id = update.effective_chat.id
+        print(user_id)
+
+        user_list = get_user()
+        print("listobj: ", user_list)
+        print("length?:", len(user_list))
+        user_dict = {"user_id" : user_id, "filter" : [category1, price_range]}
+
+        '''
+        if not any(d['user_id'] == user_id for d in user_list):
+            user_list.append(user_dict)
+            with open(filename, 'w',  encoding='utf-8') as json_file:
+                json.dump(user_list, json_file,
+                                    ensure_ascii=False,
+                                    indent=4,
+                                    separators=(',',': '))
+        '''
+
+        #select_count = 0
+
+        user_names = [x['user_id'] for x in user_list]
+
+
+        if user_id in user_names:
+            #print("count : ", select_count)
+            select_count = user_names.index(user_id)
+            user_list[select_count]["filter"] = user_dict["filter"]
+            #select_count += 1
+            with open(filename, 'w',  encoding='utf-8') as json_file:
+                json.dump(user_list, json_file,
+                                    ensure_ascii=False,
+                                    indent=4,
+                                    separators=(',',': '))
+        else :
+            user_list.append(user_dict)
+            with open(filename, 'w',  encoding='utf-8') as json_file:
+                json.dump(user_list, json_file,
+                                    ensure_ascii=False,
+                                    indent=4,
+                                    separators=(',',': '))
+        '''
+        if any(d['user_id'] == user_id for d in user_list):
+            print("count : ", select_count)
+            user_list[select_count]["filter"] = user_dict["filter"]
+            select_count += 1
+            with open(filename, 'w',  encoding='utf-8') as json_file:
+                json.dump(user_list, json_file,
+                                    ensure_ascii=False,
+                                    indent=4,
+                                    separators=(',',': '))
+
+        else:
+            user_list.append(user_dict)
+            with open(filename, 'w',  encoding='utf-8') as json_file:
+                json.dump(user_list, json_file,
+                                    ensure_ascii=False,
+                                    indent=4,
+                                    separators=(',',': '))
+
+
+
+        if any(d['user_id'] == user_id for d in user_list):
+            d["filter"] = user_dict["filter"]
+            with open(filename, 'wㅌ',  encoding='utf-8') as json_file:
+                json.dump(user_list, json_file,
+                                    ensure_ascii=False,
+                                    indent=4,
+                                    separators=(',',': '))
+        '''
+
+
+        lock.release()
 
     #message_id = update.callback_query.message.message_id
     #update_id = update.update_id
@@ -220,9 +361,15 @@ def callback_query_handler(update, context):
 # 알람 세팅 부분
 def search_msgs(update, context) -> None:
     #알람 세팅
-    t = datetime.time(hour=15, minute=23, tzinfo=pytz.timezone('Asia/Seoul'))
+
+    chat_id = update.message.from_user.id
+    print("who are you? : ", chat_id)
+
+
+
+    t = datetime.time(hour=13, minute=49, tzinfo=pytz.timezone('Asia/Seoul'))
     #context.job_queue.run_once(callback_search_msgs, context=update.message.chat_id, when=0)
-    context.job_queue.run_daily(callback_search_msgs,t,days=(0,1,2,3,6), context=update.message.chat_id, name=str(update.effective_chat.id))
+    context.job_queue.run_daily(callback_search_msgs,t,days=(0,1,2,3,4,5,6), context=update.message.chat_id, name=str(update.effective_chat.id))
     #context.job_queue.run_repeating(callback_search_msgs, 7, context=update.message.chat_id, name=str(update.effective_chat.id))
 
 
@@ -235,11 +382,17 @@ def callback_search_msgs(context) -> None:
 
     #기존의 선택값 쌍(가격,용도)에 맞추어서 주기적으로 알람 발송
     print_answer(chat_id)
+
+    #print_answer(user_id, recent_cnt)
     search_msgs(context, chat_id)
 
 
 def display_handler_start(bot, update):
     chat_id = update.message.from_user.id
+    print("who are you? : ", chat_id)
+    user = update.message.from_user
+    user_id = user['id']
+    print("user id? : ", user_id)
 
     bot.send_message(
         chat_id=chat_id,
@@ -258,14 +411,20 @@ def handler(update, context) -> None:
     lastChatId = update.message.chat_id
     if user_text == "알림설정": #ㅋㅋ라고 보내면 왜웃냐고 답장
         #context.job_queue.start()
+
+        #if alarm 미등록 = 에러 출력
+
         bot.sendMessage(chat_id=lastChatId, text="일요일 오후 7시에 알림이 도착합니다") # 답장 보내기
         search_msgs(update, context)
 
         #bot.sendMessage(chat_id=lastChatId, text="일요일 오후 7시에 알림이 도착합니다") # 답장 보내기
     elif user_text == "알림해제":
+
+        #if alarm 미등록 = 에러 출력
+
+
         bot.sendMessage(chat_id=lastChatId, text="알림을 해제합니다")
         #context.job_queue.stop()
-
         job_names = [job.name for job in context.job_queue.jobs()]
         name = job_names[0]
         current_jobs = context.job_queue.get_jobs_by_name(name)
