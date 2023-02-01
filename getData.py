@@ -70,7 +70,8 @@ for i, item in enumerate(items):
   
 
   # 파이어베이스 저장
-  ref.child(str(i)).set({
+  ref.child('items').update({
+    str(i) : {
     'category1': category1,
     'category2' : category2,
     'name' : name,
@@ -89,4 +90,5 @@ for i, item in enumerate(items):
     'end_date' : end_date,
     'duration' : duration,
     'link' : page_url
+    }
   })
