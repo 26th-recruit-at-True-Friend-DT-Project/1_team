@@ -26,7 +26,6 @@ def get_config() -> str:
     token = config_json['bot_token']
     return url, token
 
-
 #firebase, telegram-bot 설정
 firebase_url, bot_token = get_config()
 
@@ -35,15 +34,16 @@ default_app = firebase_admin.initialize_app(cred, {'databaseURL' : firebase_url}
 ref = db.reference('/items')
 user_ref = db.reference('/users')
 
-
 #가격에 대한 응답
 first_result = ""
 #용도에 대한 응답
 second_result = ""
-#가격에 대한 응답
+# 지역에 대한 응답
+third_result = ""
+
 category1 = ""
-#용도에 대한 응답
 price_range = ()
+area = ""
 
 price_dict = {
     '가격1' : 0,
@@ -61,12 +61,34 @@ type_dict = {
     '용도5' : '용도복합용건물'
 }
 
+area_dict = {
+    '지역1' : '서울',
+    '지역2' : '경기',
+    '지역3' : '인천',
+    '지역4' : '강원',
+    '지역5' : '충청',
+    '지역6' : '전라',
+    '지역7' : '경상',
+    '지역8' : '제주'
+}
+
 #용도 선택 키보드
 keyboard2 = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='토지', callback_data='용도1')],
                                                      [InlineKeyboardButton(text='주거용건물', callback_data='용도2')],
                                                      [InlineKeyboardButton(text='상가용및업무용건물', callback_data='용도3')],
                                                      [InlineKeyboardButton(text='산업용및기타특수용건물', callback_data='용도4')],
                                                      [InlineKeyboardButton(text='용도복합용건물', callback_data='용도5')]])
+
+# 지역 선택 키보드
+keyboard3 = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='서울', callback_data='지역1'),
+                                                          InlineKeyboardButton(text='경기', callback_data='지역2')],
+                                                         [InlineKeyboardButton(text='인천', callback_data='지역3'),
+                                                          InlineKeyboardButton(text='강원', callback_data='지역4')],
+                                                          [InlineKeyboardButton(text='충청', callback_data='지역5'),
+                                                          InlineKeyboardButton(text='전라', callback_data='지역6')],
+                                                          [InlineKeyboardButton(text='경상', callback_data='지역7'),
+                                                          InlineKeyboardButton(text='제주', callback_data='지역8')]
+                                                ])                                                     
 
 # 가격 범위 선택
 def selectPrice(price: str, id: str) -> None:
@@ -75,8 +97,13 @@ def selectPrice(price: str, id: str) -> None:
 
 # 용도 선택
 def selectType(category: str, id: str) -> None:
+    bot.send_message(id, '지역을 선택해주세요.', reply_markup=keyboard3)
     change_second_answer(category)
     #print_answer(id)
+
+# 지역 선택
+def selectArea(area: str) -> None:
+    change_third_answer(area)
 
 # 첫번째 문항
 def change_first_answer(first_answer):
@@ -92,12 +119,21 @@ def change_second_answer(second_answer):
     global category1
     category1 = type_dict[second_result]
 
+# 세번째 문항
+def change_third_answer(third_answer):
+    global third_result
+    third_result = third_answer
+    global area
+    area = area_dict[third_result]
+
 # 결과 출력
 def print_answer(id: str) -> None:
     print("1: ", first_result)
     print("2: ", second_result)
-    print(f'category1: {category1}, price_range: {price_range}')
+    print("3: ", third_result)
+    print(f'category1: {category1}, price_range: {price_range}, area: {area}')
     output_list = find_object(id)
+    print(f'output: {output_list}')
     result_list = []
     # 위치 중복 제거
     tmp = []
@@ -137,10 +173,10 @@ def find_object(id) -> list:
         print("test1",category1)
         price_range = (user_ref.get()[str_id]["lower"], user_ref.get()[str_id]["upper"])
         print("test2",price_range)
-
+        
         #user-specific filter 적용
         for item in ref.get():
-            if(item['category1'] == category1 and (int(item['lowest']) >= price_range[0] and int(item['lowest']) < price_range[1])):
+            if(item['category1'] == category1 and (int(item['lowest']) >= price_range[0] and int(item['lowest']) < price_range[1]) and item['location'][:2] == area):
                 result.append(item)
 
     #user가 없을 경우 = 필터 미등록
@@ -160,18 +196,19 @@ def callback_query_handler(update, context):
         selectPrice(query_data, from_id)
 
     elif query_data[:2] == '용도':
-
         selectType(query_data, from_id)
+
+    elif query_data[:2] == '지역':
+        selectArea(query_data)
         bot.send_message(chat_id=from_id, text="물건 탐색중...")
         #race condition 방지
         lock.acquire()
 
         user_id = update.effective_chat.id
-        print(f'type!!!: {type(user_id)}')
         print(user_id)
 
         #사용자가 선택한 filter 정보 & DB에 저장
-        user_dict = {"user_id" : user_id, "category" : category1, "lower" : price_range[0], "upper" : price_range[1]}
+        user_dict = {"user_id" : user_id, "category" : category1, "lower" : price_range[0], "upper" : price_range[1], "area" : area}
         user_ref.update({
             str(user_id) : user_dict
         })
@@ -188,7 +225,7 @@ def search_msgs(update, context) -> None:
     print("who are you? : ", chat_id)
 
     #알람 시간 세팅 hour = 시 min = 분
-    t = datetime.time(hour=10, minute=00, tzinfo=pytz.timezone('Asia/Seoul'))
+    t = datetime.time(hour=15, minute=00, tzinfo=pytz.timezone('Asia/Seoul'))
 
     #days = 월요일 0 기준
     context.job_queue.run_daily(callback_search_msgs,t,days=(0,1,2,3,4,5,6), context=update.message.chat_id, name=str(update.effective_chat.id))
@@ -265,10 +302,10 @@ def main():
     updater.start_polling()
     updater.idle()
 
-
 if __name__ == '__main__':
 
     token = bot_token
     bot = telegram.Bot(token = token)
     print('Listening ...')
+    print(f'size: {len(ref.get())}, ref.get type: {type(ref.get())}')
     main()

@@ -4,6 +4,10 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import db
 import json
+from datetime import datetime
+
+today = datetime.now()
+today = today.strftime('%Y%m%d')
 
 # token, url 숨겨서 가져오기
 def get_config() -> str:
@@ -23,10 +27,11 @@ ref = db.reference('/')
 
 
 # API 가져오기
-url = f'http://openapi.onbid.co.kr/openapi/services/KamcoPblsalThingInquireSvc/getKamcoPbctCltrList?serviceKey={encodig_key}&pageNo=1&numOfRows=100&DPSL_MTD_CD=0001&PBCT_CLS_DTM=20230228'
+url = f'http://openapi.onbid.co.kr/openapi/services/KamcoPblsalThingInquireSvc/getKamcoPbctCltrList?serviceKey={encodig_key}&pageNo=1&numOfRows=1000&DPSL_MTD_CD=0001&PBCT_CLS_DTM=20230211'
 result = requests.get(url)
 soup = BeautifulSoup(result.text, 'lxml')
 items = soup.find_all('item')
+order = 0
 
 for i, item in enumerate(items):
   # 용도
@@ -62,33 +67,33 @@ for i, item in enumerate(items):
   name = item.find('cltr_nm').get_text()
   # 입착 시작, 마감일
   start_date = item.find('pbct_begn_dtm').get_text()[:8]
-  start_date = f'{start_date[:4]}-{start_date[4:6]}-{start_date[6:8]}'
   end_date = item.find('pbct_cls_dtm').get_text()[:8]
-  end_date = f'{end_date[:4]}-{end_date[4:6]}-{end_date[6:8]}'
-  duration = f'{start_date} ~ {end_date}'
+  duration = f'{start_date[:4]}-{start_date[4:6]}-{start_date[6:8]} ~ {end_date[:4]}-{end_date[4:6]}-{end_date[6:8]}'
   page_url = f'https://www.onbid.co.kr/op/cta/cltrdtl/collateralRealEstateDetail.do?searchAddr=&searchSiDo=&searchSiGunGu=&searchEmd=&collateralGbnCd=0001&bizDvsnCd=0001&cltrHstrNo={item_record_num}&cltrNo={item_num}&plnmNo={announce_num}&pbctNo={sale_num}&scrnGrpCd={grp_code}&pbctCdtnNo={sale_cdtn_num}&viewGbn=&menuId=2021&searchYn=Y&searchDpslMtdCd=&searchCltrNm=&searchCltrMnmtNo=&searchBegnDtm=2023-01-26&searchClsDtm={end_date}&searchFromMinBidPrc=&searchToMinBidPrc=&searchOrgNm=&searchFromApslAsesAmt=&searchToApslAsesAmt=&searchCltrAdrsType=road&siDo=&siGunGu=&emd=&searchAddrDtl=&searchFromLandSqms=&searchToLandSqms=&searchFromBldSqms=&searchToBldSqms=&searchFromUsbdCnt=&searchToUsbdCnt=&searchShrYn=&_searchArrayPrptDvsnCd=on&_searchArrayPrptDvsnCd=on&_searchArrayPrptDvsnCd=on&_searchArrayPrptDvsnCd=on&_searchArrayPrptDvsnCd=on&_searchArrayPrptDvsnCd=on&_searchArrayPrptDvsnCd=on&_searchArrayPrptDvsnCd=on&_searchArrayPrptDvsnCd=on&searchAdtnInfo1=&searchAdtnInfo2=&searchAdtnInfo3=&searchMbsNm=&searchScrtNm=&searchItemNm=&searchScrtKind=&searchDpslFincComp=&searchPoorBondKind=&searchHdorAstFixDyFrom=&searchHdorAstFixDyTo=&_searchKamcoYn=on&searchOrderBy=&pageUnit=10&pageIndex=1&srchNm=&_csrf=1e958df3-63e4-4a06-a53e-fa7bf37f19f1&_csrf=1e958df3-63e4-4a06-a53e-fa7bf37f19f1'
-  
-
-  # 파이어베이스 저장
-  ref.child('items').update({
-    str(i) : {
-    'category1': category1,
-    'category2' : category2,
-    'name' : name,
-    'item_num' : item_num,
-    'item_record_num' : item_record_num,
-    'fail_cnt' : fail_cnt,
-    'announce_num' : announce_num,
-    'sale_num' : sale_num,
-    'sale_cdtn_num' : sale_cdtn_num,
-    'location': location,
-    'gamjung' : gamjung,
-    'lowest' : lowest,
-    'rate' : rate,
-    'grp_code' : grp_code,
-    'start_date' : start_date,
-    'end_date' : end_date,
-    'duration' : duration,
-    'link' : page_url
-    }
-  })
+  # 마감일이 현재날짜 이상이어야 함
+  if int(end_date) >= int(today):
+    i = order
+    # 파이어베이스 저장
+    ref.child('items').update({
+      str(i) : {
+      'category1': category1,
+      'category2' : category2,
+      'name' : name,
+      'item_num' : item_num,
+      'item_record_num' : item_record_num,
+      'fail_cnt' : fail_cnt,
+      'announce_num' : announce_num,
+      'sale_num' : sale_num,
+      'sale_cdtn_num' : sale_cdtn_num,
+      'location': location,
+      'gamjung' : gamjung,
+      'lowest' : lowest,
+      'rate' : rate,
+      'grp_code' : grp_code,
+      'start_date' : start_date,
+      'end_date' : end_date,
+      'duration' : duration,
+      'link' : page_url
+      }
+    })
+    order += 1
